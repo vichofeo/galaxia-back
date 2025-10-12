@@ -1,0 +1,47 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "vico",
+    "database": "ss_sscpdb",    
+    "schema": "pruebas_2",    
+    "searchPath": "pruebas_2",
+    "host": "localhost",
+    "dialect": "postgres",
+    "dialectOptions": {            
+      "prependSearchPath": true
+    },
+    "PORT": 5432,
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    }
+  },
+  "test": {
+    "username": "root",
+    "password": null,
+    "database": "patty",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  },
+  "production": {
+    "username": "postgres",
+    "password": "postgres.2023",
+    "database": "aeb_testdb",    
+    "schema": "public",    
+    "searchPath": "public",
+    "host": "localhost",
+    "dialect": "postgres",
+    "dialectOptions": {            
+      "prependSearchPath": true
+    },
+    "PORT": 5432,
+    "pool": {
+      "max": 5,
+      "min": 0,
+      "acquire": 30000,
+      "idle": 10000
+    }
+  }
+}

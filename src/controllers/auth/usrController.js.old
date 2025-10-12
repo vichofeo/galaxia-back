@@ -1,0 +1,109 @@
+const db = require('./../../models')
+const usrModel = db.usr
+
+//importando modulo de encriptado
+var bcrypt = require('bcrypt')
+
+
+
+//listar
+async function listar(req, res) {
+  const datos = await usrModel.findAll()
+  res.json(datos)
+}
+
+//guardar crear
+async function guardar(req, res) {
+  //verificacion por correo
+  var usuario = req.body.usuario
+
+  const usr = await usrModel.findAll({where:{ usuario: usuario }})
+  if (usr.length > 0) {
+    res.json({
+      mensaje: 'Usuario email YA ESTA RESGITRADO',
+    })
+  } else {
+    try {
+    //procesando contrasenia
+    var tempUsr = {}
+    var BCRYPT_SALT_ROUNDS = 12
+    var passHash = await bcrypt.hash(req.body.password, BCRYPT_SALT_ROUNDS)
+
+    console.log(passHash)
+    
+    /*tempUsr = {
+            usuario: req.body.usuario,
+            email: req.body.email,
+            estado: req.body.estado,
+            password: passHash
+        };*/
+
+    req.body.password = passHash
+    
+    const usrt= await usrModel.create({usuario: req.body.usuario, password: req.body.password})
+    res.json({
+      mensaje: 'ESTA REGIsTRANDO a usuario NUEVO',
+      usr: usrt
+    })
+    } catch (error) {
+        console.log(error);
+        res.json({e:error})
+    };
+    
+    
+  }
+}
+
+//mostrar-buscar por id
+async function mostrar(req, res) {
+  //var mail = req.body.email;
+  var id = req.params.id
+
+  try {
+    const user = await usrModel.findById(id)
+
+    if (user) {
+      res.json({
+        mensaje: 'usuario HALLADO',
+      })
+    } else {
+      res.json({
+        mensaje: 'NO ENCONTRADO',
+      })
+    }
+  } catch (error) {
+    console.log('error en la busqueda' + error)
+    const err = await res.status(404)
+    res.json({
+      estado: 404,
+      mensaje: '404... error en busqueda',
+    })
+  }
+}
+
+//modificar por id
+async function modificar(req, res) {
+  var id = req.params.id
+  await usrModel.updateOne({ _id: id }, req.body)
+  res.json({ mensaje: 'usuarioos modificado' })
+}
+
+//eliminar por id
+async function eliminar(req, res) {
+  var id = req.params.id
+  await usrModel.remove({ _id: id })
+
+  res.json({
+    mensaje: 'eliminado',
+  })
+}
+
+//exportacion de las funciones
+
+module.exports = {
+  listar,
+  guardar,
+  mostrar,
+  modificar,
+  eliminar,
+}
