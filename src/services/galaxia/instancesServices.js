@@ -5,15 +5,44 @@ const workflowEngine = require('./../../services/galaxia/workflowEngine');
 
 
 // services/galaxia/instancesService.js
+
+const getProcesses= async (dto, handleError) => {
+    try {
+        const { idx } = dto
+
+        qUtil.setTableInstance("galaxia_processes")
+        qUtil.setWhere({ status: idx })
+        await qUtil.findTune()
+        const processes = qUtil.getResults()
+        if (!processes)
+            return {
+                ok: false,
+                message: 'Instancia no encontrada'
+            }
+        else
+            return {
+                ok: true,
+                data: processes,
+                message: "Instancia devuelta exitosamente"
+            }
+
+    } catch (error) {
+        console.log("Error en startInstance:", error)
+        handleError.setMessage("Error de sistema: INSTDETAILSRV")
+        handleError.setHttpError(error.message)
+    }
+}
+
+
 const createInstance = async (dto, handleError) => {
     try {
-        const { processId, createdBy, initialData } = dto
+        const { processId, owner, initialData } = dto
 
         // Usar el WorkflowEngine para iniciar instancia
-        const instance = await workflowEngine.createInstance(
+        const instance = await workflowEngine.createGuInstance({
             processId,
-            createdBy,
-            initialData
+            owner,
+            initialData}
         )
 
         return {
@@ -24,27 +53,28 @@ const createInstance = async (dto, handleError) => {
 
     } catch (error) {
         console.log("Error en startInstance:", error)
-        handleError.setMessage("Error de sistema: STARTINSTSRV")
+        handleError.setMessage("Error de sistema: INSTCREATESRV")
         handleError.setHttpError(error.message)
     }
 }
 
-
+// Listar instancias del usuario
 const listInstances = async (dto, handleError) => {
     try {
         const { userId, processId, status } = dto
 
+        
         const where = {};
-        if (userId) where.createdBy = userId;
+        if (userId) where.owner = userId;
         if (processId) where.processId = processId;
         if (status) where.status = status;
 
         qUtil.setTableInstance("galaxia_instances")
-        qUtil.setInclude({ asociation: 'gi_gp_process', required: false, attributes: ['name', 'version'] })
+        qUtil.setInclude({ association: 'gi_gp_process', required: false, attributes: ['name', 'version'] })
         //{ model: User, as: 'creator', attributes: ['id', 'username'] }
         //qUtil.pushInclude({})
         qUtil.setWhere(where)
-        qUtil.setOrder([['createdAt', 'DESC']])
+        qUtil.setOrder([['started', 'DESC']])
         await qUtil.findTune()
         const instances = qUtil.getResults()
 
@@ -56,10 +86,11 @@ const listInstances = async (dto, handleError) => {
 
     } catch (error) {
         console.log("Error en startInstance:", error)
-        handleError.setMessage("Error de sistema: STARTINSTSRV")
+        handleError.setMessage("Error de sistema: INSTLISTSRV")
         handleError.setHttpError(error.message)
     }
 }
+
 
 const detailInstance = async (dto, handleError) => {
     try {
@@ -67,16 +98,16 @@ const detailInstance = async (dto, handleError) => {
 
         qUtil.setTableInstance("galaxia_instances")
         qUtil.setInclude({
-            asociation: 'gi_gp_process', required: false,
-            include: [{ asociation: 'gp_ga_activities', required: false }]
+            association: 'gi_gp_process', required: false,
+            include: [{ association: 'gp_ga_activities', required: false }]
         }
         )
         //{ model: User, as: 'creator', attributes: ['id', 'username'] }
         //qUtil.pushInclude({})
         qUtil.pushInclude({
-            asociation: 'gi_gw_workitems', required: false,
+            association: 'gi_gw_workitems', required: false,
             include: [{
-                asociation: 'gw_ga_activity', required: false
+                association: 'gw_ga_activity', required: false
             },
                 //{ model: User, attributes: ['id', 'username'] }]
             ]
@@ -97,13 +128,43 @@ const detailInstance = async (dto, handleError) => {
 
     } catch (error) {
         console.log("Error en startInstance:", error)
-        handleError.setMessage("Error de sistema: STARTINSTSRV")
+        handleError.setMessage("Error de sistema: INSTDETAILSRV")
         handleError.setHttpError(error.message)
     }
 }
 
-module.exports = {
+const updateInstance = async (dto, handleError) => {
+    try {
+        const { status, data, idx } = dto
+
+        qUtil.setTableInstance("galaxia_instances")
+        await qUtil.findID(idx)
+        let instance = qUtil.getResults()
+        if (!instance)
+            return {
+                ok: false,
+                message: 'Instancia no encontrada'
+            }
+        if (status) instance.status = status;
+        if (data) instance = { ...instance, ...data };
+        qUtil.setWhere({ instanceId: idx })
+        await qUtil.modify()
+
+        return {
+            ok: true,
+            data: instance,
+            message: "Instancia actualizada exitosamente"
+        }
+
+    } catch (error) {
+        console.log("Error en startInstance:", error)
+        handleError.setMessage("Error de sistema: INSTUPDATESRV")
+        handleError.setHttpError(error.message)
+    }
+}
+module.exports = {getProcesses,
     createInstance,
     listInstances,
-    detailInstance
+    detailInstance,
+    updateInstance
 }

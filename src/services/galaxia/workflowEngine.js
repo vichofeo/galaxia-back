@@ -265,6 +265,128 @@ class WorkflowEngine {
     // En producción, verificar roles del usuario vs roles de la actividad
     return true
   }
+
+  //METODOS PARA LA INSTANCIACION POR EL USUARIO
+  // Crear nueva instancia de proceso
+  async createGuInstance({ processId, owner, initialData = {} }) {
+    console.log("\n\nProceso para instanciar:", processId)
+    const qUtil = new (require('../../utils/queries/Qutils'))()
+    qUtil.setTableInstance("galaxia_processes")
+    qUtil.setInclude({association: 'gp_ga_activities', required: false})
+    await qUtil.findID(processId)
+    const process = qUtil.getResults()
+
+    console.log("\n\nProceso para instanciar:", process)
+
+    if (!process) {
+      throw new Error('Proceso no encontrado');
+    }
+
+    // Encontrar actividad de inicio    
+    const startActivity = process.gp_ga_activities.find(act => act.type === 'start');
+    if (!startActivity) {
+      throw new Error('El proceso no tiene actividad de inicio');
+    }
+    
+
+    // Crear instancia
+    let instance = {
+      pId: processId,
+      owner,
+      status: 'active',
+      ...initialData,
+      started: Math.floor(Date.now() / 1000),
+      nextActivity: startActivity.activityId
+    }
+console.log("\n\ninstanciar:", instance)
+
+    qUtil.setTableInstance("galaxia_instances")
+    qUtil.setDataset(instance)
+    await qUtil.create()
+    instance = qUtil.getResults()
+    
+    
+
+    // Crear workitem inicial
+    qUtil.setTableInstance("galaxia_workitems")
+    qUtil.setDataset({
+      instanceId: instance.instanceId,
+      activityId: startActivity.activityId,
+      orderId: 1,
+      started: Math.floor(Date.now() / 1000),
+      user: owner, // Asignar al creador inicialmente
+      status: 'pending'
+    })
+    await qUtil.create()
+
+    return instance;
+  }
+
+  async getGuUserWorkitems(userId) {
+    const qUtil = new (require('../../utils/queries/Qutils'))()
+    qUtil.setTableInstance("galaxia_workitems")
+    qUtil.setInclude({association: 'gw_gi_instance', required: true,
+            include: [{association: 'gi_gp_process', required: true},
+              {association: 'gi_ga_activities', required: true}
+            ]
+    })
+    qUtil.setWhere({ assignedTo: userId, status: 'pending' })
+    qUtil.setOrder([['started', 'ASC']])
+    await qUtil.findTune()
+    return qUtil.getResults()
+    
+  }
+
+   // Completar actividad y mover a siguiente
+  async completeGuActivity(workitemId, resultData = {}) {
+    const qUtil = new (require('../../utils/queries/Qutils'))()
+    qUtil.setTableInstance("galaxia_workitems")
+    qUtil.setInclude({association: 'gw_gi_instance', required: true,})
+    qUtil.pushInclude({association: 'gw_ga_activity', required: true,})
+    await qUtil.findID(workitemId)
+    const workitem = qUtil.getResults()
+
+    if (!workitem) {
+      throw new Error('Workitem no encontrado');
+    }
+
+    // Marcar workitem como completado
+    workitem.status = 'completed';
+    workitem.completedAt = new Date();
+    qUtil.setTableInstance("galaxia_workitems")
+    qUtil.setDataset(workitem)
+    await qUtil.create()
+
+    // Actualizar datos de instancia
+    if (Object.keys(resultData).length > 0) {
+      workitem.gw_gi_instance = { ...workitem.gw_gi_instance, ...resultData };
+      qUtil.setTableInstance('galaxia_instances')
+      qUtil.setDataset(workitem.gw_gi_instance)
+      qUtil.setWhere({instanceId: workitem.instanceId})
+      await qUtil.modify()
+      //await workitem.Instance.save();
+    }
+
+    // Obtener transiciones de la actividad actual
+    qUtil.setTableInstance("galaxia_transitions")
+    qUtil.setWhere({ fromActivityId: workitem.activityId })
+    await qUtil.findTune()
+    const transitions = qUtil.getResults()
+
+    // Crear nuevos workitems para las siguientes actividades
+    for (const transition of transitions) {
+      qUtil.setTableInstance("galaxia_workitems")
+      qUtil.setDataset({
+        instanceId: workitem.instanceId,
+        activityId: transition.toActivityId,
+        assignedTo: workitem.assignedTo, // Por defecto mismo usuario
+        status: 'pending'
+      })
+      await qUtil.create()
+    }
+
+    return workitem;
+  }
 }
 
 module.exports = new WorkflowEngine()

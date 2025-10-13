@@ -4,14 +4,29 @@ const handleError = new HandleErrors()
 const service = require('./../../services/galaxia/instancesServices')
 
 
-
-// Crear nueva instancia
-const createInstance = async (req, res) => {
-    const { processId, createdBy, initialData = {} } = req.body;
+//listar procesos
+const getProcesses = async (req, res) => {
+    const idx = req.params.id;
     const token = req.headers.authorization
 
     try {
-        const result = await service.createInstance({ processId, createdBy, initialData, token }, handleError)
+        const result = await service.getProcesses({ token, idx }, handleError)
+        handleError.setResponse(result)
+        res.status(handleError.getCode()).json(handleError.getResponse())
+    } catch (error) {
+        console.error('Error detail instance:', error)
+        handleError.setMessage('Error detail instancia')
+        res.status(500).json(handleError.getResponse())
+    }
+}
+
+// Crear nueva instancia
+const createInstance = async (req, res) => {
+    const { processId, owner, initialData = {} } = req.body;
+    const token = req.headers.authorization
+
+    try {
+        const result = await service.createInstance({ processId, owner, initialData, token }, handleError)
         handleError.setResponse(result)
         res.status(handleError.getCode()).json(handleError.getResponse())
     } catch (error) {
@@ -21,7 +36,7 @@ const createInstance = async (req, res) => {
     }
 }
 
-//listar instancias
+//listar instancias de usuario
 const listInstances = async (req, res) => {
     const { userId, processId, status } = req.query;
     const token = req.headers.authorization
@@ -53,9 +68,26 @@ const detailInstance = async (req, res) => {
     }
 }
 
+//update instance
+const updateInstance = async (req, res) => {
+    const idx = req.params.id;
+    const { status, data } = req.body;
+    const token = req.headers.authorization
 
-module.exports = {
+    try {
+        const result = await service.updateInstance({ status, data, idx, token  }, handleError)
+        handleError.setResponse(result)
+        res.status(handleError.getCode()).json(handleError.getResponse())
+    } catch (error) {
+        console.error('Error detail instance:', error)
+        handleError.setMessage('Error detail instancia')
+        res.status(500).json(handleError.getResponse())
+    }
+}
+
+module.exports = {getProcesses, 
    createInstance,
-   listInstances, 
-   detailInstance
+   listInstances,    
+   detailInstance,
+   updateInstance
 }

@@ -5,6 +5,8 @@ const router = express.Router()
 const controller = require('./../controllers/galaxia/galaxiaController')
 
 const instancesController = require('./../controllers/galaxia/instancesController')
+const userInterfaceController = require('./../controllers/galaxia/userInterfaceController')
+
 
 // Rutas específicas de Galaxia
 router.get("/processes",  controller.getProcesses)
@@ -59,10 +61,18 @@ router.get("/users/:userId/instances",  controller.getUserInstances)
 router.get("/users/:userId/stats",  controller.getUserStats)
 router.post("/workitems/:id/execute",  controller.executeWorkitem)
 
-//instancias
+//========== instancias
+router.get("/guprocesses/:id",  instancesController.getProcesses)
 router.post("/guinstances",  instancesController.createInstance)
 router.get("/guinstances",  instancesController.listInstances)
 router.get("/guinstances/:id",  instancesController.detailInstance)
+router.put("/guinstances/:id",  instancesController.updateInstance)
+
+//=========== workitems users 
+//userInterfaceController
+router.get("/ui/workitems",  userInterfaceController.getWorkitems)
+router.get("/ui/workitem/:id",  userInterfaceController.detailWorkitem)
+router.post("/ui/workitem/:id/complete",  userInterfaceController.completeWorkitem)
 
 
 module.exports = router
