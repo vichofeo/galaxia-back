@@ -10,8 +10,19 @@ const getProcesses= async (dto, handleError) => {
     try {
         const { idx } = dto
 
+        //qUtil.setTableInstance("galaxia_processes")
+        //qUtil.setWhere({ status: idx })
         qUtil.setTableInstance("galaxia_processes")
-        qUtil.setWhere({ status: idx })
+        qUtil.setInclude({
+            association: 'gp_ga_activities', required: true,
+            attributes: ['activityId', 'name', 'type', 'isInteractive', 'isAutoRouted']
+        })
+        qUtil.pushInclude({
+            association: 'gp_gr_roles', required: false,
+            attributes: ['roleId', 'name', 'description']
+        })
+        qUtil.setOrder([['pId', 'DESC']])
+
         await qUtil.findTune()
         const processes = qUtil.getResults()
         if (!processes)

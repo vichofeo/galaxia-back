@@ -7,6 +7,9 @@ const controller = require('./../controllers/galaxia/galaxiaController')
 const instancesController = require('./../controllers/galaxia/instancesController')
 const userInterfaceController = require('./../controllers/galaxia/userInterfaceController')
 
+const templatesController = require('./../controllers/galaxia/templatesController')
+
+
 
 // Rutas específicas de Galaxia
 router.get("/processes",  controller.getProcesses)
@@ -73,6 +76,13 @@ router.put("/guinstances/:id",  instancesController.updateInstance)
 router.get("/ui/workitems",  userInterfaceController.getWorkitems)
 router.get("/ui/workitem/:id",  userInterfaceController.detailWorkitem)
 router.post("/ui/workitem/:id/complete",  userInterfaceController.completeWorkitem)
+
+//=============== Templates
+router.get("/template/instances/:instanceId/variables",  templatesController.getVarsInstance)
+router.post("/template/instances/:instanceId/variables",  templatesController.setVarInstance)
+router.put("/template/instances/:instanceId/variables/:variableName",  templatesController.updateVarInstance)
+router.delete("/template/instances/:instanceId/variables/:variableName",  templatesController.deleteVarInstance)
+
 
 
 module.exports = router
