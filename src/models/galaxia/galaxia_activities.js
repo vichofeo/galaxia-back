@@ -24,6 +24,10 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'ga_gic_comments',
                 foreignKey: 'activityId'
             })
+            galaxia_activities.hasOne(models.galaxia_activity_templates, {
+                as: 'ga_gat_template',
+                foreignKey: 'activityId',                
+            })
         }
     }
     galaxia_activities.init(

@@ -8,6 +8,8 @@ const instancesController = require('./../controllers/galaxia/instancesControlle
 const userInterfaceController = require('./../controllers/galaxia/userInterfaceController')
 
 const templatesController = require('./../controllers/galaxia/templatesController')
+const variablesController = require('./../controllers/galaxia/variablesController')
+const workitemController = require('./../controllers/galaxia/workitemsController')
 
 
 
@@ -78,11 +80,20 @@ router.get("/ui/workitem/:id",  userInterfaceController.detailWorkitem)
 router.post("/ui/workitem/:id/complete",  userInterfaceController.completeWorkitem)
 
 //=============== Templates
-router.get("/template/instances/:instanceId/variables",  templatesController.getVarsInstance)
-router.post("/template/instances/:instanceId/variables",  templatesController.setVarInstance)
-router.put("/template/instances/:instanceId/variables/:variableName",  templatesController.updateVarInstance)
-router.delete("/template/instances/:instanceId/variables/:variableName",  templatesController.deleteVarInstance)
+router.get("/templates/activities/:activityId/template",  templatesController.getTemplateActivity)
+router.post("/templates/activities/:activityId/template",  templatesController.saveTemplateActivity)
+router.post("/templates/render",  templatesController.renderTemplate)
+router.get("/templates/library",  templatesController.getTemplateLibrary)
 
+// ============== Variables
+router.get("/variables/instances/:instanceId/variables",  variablesController.getVarsInstance)
+router.post("/variables/instances/:instanceId/variables",  variablesController.setVarInstance)
+router.put("/variables/instances/:instanceId/variables/:variableName",  variablesController.updateVarInstance)
+router.delete("/variables/instances/:instanceId/variables/:variableName",  variablesController.deleteVarInstance)
 
+// ================== workItems
+router.get("/wi/instances/:instanceId/workitems",  workitemController.getInstanceWorkitems)
+router.get("/wi/user/:userId",  workitemController.getWorkitemUsr)
+router.get("/wi/:id",  workitemController.getListWorkitems)
 
 module.exports = router

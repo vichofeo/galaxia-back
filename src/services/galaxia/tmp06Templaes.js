@@ -1,97 +1,129 @@
-// /galaxia-back/src/routes/variables.js - NUEVO ARCHIVO
+// /galaxia-back/src/routes/templates.js - CORREGIDO
 const express = require('express');
 const router = express.Router();
-const { Instance } = require('../models');
+const { Activity, ActivityTemplate } = require('../models'); // Nueva tabla para templates
 
-// Obtener variables de instancia
-router.get('/instances/:instanceId/variables', async (req, res) => {
+// Obtener template de una actividad
+router.get('/activities/:activityId/template', async (req, res) => {
   try {
-    const instance = await Instance.findByPk(req.params.instanceId);
-    if (!instance) {
-      return res.status(404).json({ error: 'Instancia no encontrada' });
+    // Buscar en tabla separada ActivityTemplate
+    const template = await ActivityTemplate.findOne({
+      where: { activityId: req.params.activityId }
+    });
+
+    if (!template) {
+      return res.json({
+        activityId: req.params.activityId,
+        template: '',
+        formConfig: []
+      });
     }
-
-    res.json(instance.data || {});
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Establecer variable de instancia
-router.post('/instances/:instanceId/variables', async (req, res) => {
-  try {
-    const { name, value, type } = req.body;
-    const instance = await Instance.findByPk(req.params.instanceId);
-    
-    if (!instance) {
-      return res.status(404).json({ error: 'Instancia no encontrada' });
-    }
-
-    const currentData = instance.data || {};
-    currentData[name] = value;
-
-    await instance.update({ data: currentData });
 
     res.json({
-      success: true,
-      variable: { name, value, type },
-      instanceData: currentData
+      activityId: template.activityId,
+      template: template.content || '',
+      formConfig: template.formConfig || []
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Actualizar variable existente
-router.put('/instances/:instanceId/variables/:variableName', async (req, res) => {
+// Guardar template en actividad
+router.post('/activities/:activityId/template', async (req, res) => {
   try {
-    const { value } = req.body;
-    const instance = await Instance.findByPk(req.params.instanceId);
+    const { template, formConfig } = req.body;
     
-    if (!instance) {
-      return res.status(404).json({ error: 'Instancia no encontrada' });
+    // Verificar que la actividad existe
+    const activity = await Activity.findByPk(req.params.activityId);
+    if (!activity) {
+      return res.status(404).json({ error: 'Actividad no encontrada' });
     }
 
-    const currentData = instance.data || {};
-    if (!(req.params.variableName in currentData)) {
-      return res.status(404).json({ error: 'Variable no encontrada' });
-    }
+    // Buscar template existente o crear nuevo
+    const [activityTemplate, created] = await ActivityTemplate.findOrCreate({
+      where: { activityId: req.params.activityId },
+      defaults: {
+        content: template,
+        formConfig: formConfig
+      }
+    });
 
-    currentData[req.params.variableName] = value;
-    await instance.update({ data: currentData });
+    // Si ya existe, actualizar
+    if (!created) {
+      await activityTemplate.update({
+        content: template,
+        formConfig: formConfig,
+        updatedAt: new Date()
+      });
+    }
 
     res.json({
       success: true,
-      variable: { name: req.params.variableName, value },
-      instanceData: currentData
+      message: 'Template guardado exitosamente',
+      template: activityTemplate
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Eliminar variable
-router.delete('/instances/:instanceId/variables/:variableName', async (req, res) => {
+// Renderizar template con datos (ESTE SÍ FUNCIONA)
+router.post('/templates/render', async (req, res) => {
   try {
-    const instance = await Instance.findByPk(req.params.instanceId);
+    const { template, instanceData } = req.body;
     
-    if (!instance) {
-      return res.status(404).json({ error: 'Instancia no encontrada' });
+    let rendered = template;
+    
+    // Reemplazar variables {{ variable }} con datos
+    if (instanceData && typeof instanceData === 'object') {
+      Object.keys(instanceData).forEach(key => {
+        const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
+        const value = instanceData[key] !== null && instanceData[key] !== undefined 
+          ? String(instanceData[key]) 
+          : '';
+        rendered = rendered.replace(regex, value);
+      });
     }
-
-    const currentData = instance.data || {};
-    if (!(req.params.variableName in currentData)) {
-      return res.status(404).json({ error: 'Variable no encontrada' });
-    }
-
-    delete currentData[req.params.variableName];
-    await instance.update({ data: currentData });
 
     res.json({
-      success: true,
-      message: `Variable ${req.params.variableName} eliminada`,
-      instanceData: currentData
+      rendered: rendered,
+      original: template,
+      variablesUsed: instanceData ? Object.keys(instanceData) : []
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Biblioteca de templates (ESTE SÍ FUNCIONA)
+router.get('/templates/library', async (req, res) => {
+  try {
+    const libraryTemplates = [
+      {
+        id: 1,
+        name: 'Formulario de Solicitud Simple',
+        category: 'Solicitud',
+        content: `Solicitud: {{ tipo }}\n\nSolicitante: {{ solicitante }}\nDescripción: {{ descripcion }}\nPrioridad: {{ prioridad }}`,
+        variables: ['tipo', 'solicitante', 'descripcion', 'prioridad']
+      },
+      {
+        id: 2, 
+        name: 'Formulario de Aprobación',
+        category: 'Aprobación', 
+        content: `Solicitud de Aprobación\n\nProyecto: {{ proyecto }}\nMonto: {{ monto }}\nJustificación: {{ justificacion }}\n\nDecisión: {{ decision }}`,
+        variables: ['proyecto', 'monto', 'justificacion', 'decision']
+      },
+      {
+        id: 3,
+        name: 'CD Loan Request',
+        category: 'Préstamo',
+        content: `Solicitud de Préstamo de CD\n\nCD Solicitado: {{ cdTitle }}\nUsuario: {{ userName }}\nDías Requeridos: {{ daysRequested }}\n\nFecha Solicitud: {{ requestDate }}`,
+        variables: ['cdTitle', 'userName', 'daysRequested', 'requestDate']
+      }
+    ];
+
+    res.json(libraryTemplates);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
