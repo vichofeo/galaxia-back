@@ -49,7 +49,7 @@ const detailWorkitem = async (dto, handleError) => {
             association: 'gw_ga_activity', required: false,            
         })
         
-        await qUtil.findTune(dto.idx)
+        await qUtil.findID(dto.idx)
         const results = qUtil.getResults()
 
         return {

@@ -352,10 +352,12 @@ console.log("\n\ninstanciar:", instance)
 
     // Marcar workitem como completado
     workitem.status = 'completed';
-    workitem.completedAt = new Date();
+    workitem.ended = Math.floor(Date.now() / 1000)//new Date();
     qUtil.setTableInstance("galaxia_workitems")
     qUtil.setDataset(workitem)
-    await qUtil.create()
+    //await qUtil.create()
+    qUtil.setWhere({itemId:workitemId})
+    await qUtil.modify()
 
     // Actualizar datos de instancia
     if (Object.keys(resultData).length > 0) {
@@ -369,7 +371,7 @@ console.log("\n\ninstanciar:", instance)
 
     // Obtener transiciones de la actividad actual
     qUtil.setTableInstance("galaxia_transitions")
-    qUtil.setWhere({ fromActivityId: workitem.activityId })
+    qUtil.setWhere({ actFromId: workitem.activityId })
     await qUtil.findTune()
     const transitions = qUtil.getResults()
 
@@ -378,9 +380,9 @@ console.log("\n\ninstanciar:", instance)
       qUtil.setTableInstance("galaxia_workitems")
       qUtil.setDataset({
         instanceId: workitem.instanceId,
-        activityId: transition.toActivityId,
-        assignedTo: workitem.assignedTo, // Por defecto mismo usuario
-        status: 'pending'
+        activityId: transition.actToId,
+        user: workitem.user, // Por defecto mismo usuario
+        status: 'pending', started: Math.floor(Date.now() / 1000)
       })
       await qUtil.create()
     }

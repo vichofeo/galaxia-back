@@ -48,7 +48,7 @@ const getProcesses= async (dto, handleError) => {
 const createInstance = async (dto, handleError) => {
     try {
         const { processId, owner, initialData } = dto
-
+console.log("\n\n [CREATE INSTANCE]:",dto ," \n\n")
         // Usar el WorkflowEngine para iniciar instancia
         const instance = await workflowEngine.createGuInstance({
             processId,

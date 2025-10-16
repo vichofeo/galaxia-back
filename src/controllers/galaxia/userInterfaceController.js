@@ -5,6 +5,7 @@ const service = require('./../../services/galaxia/userInterfaceService')
 
 const getWorkitems = async (req, res) => {
     const token = req.headers.authorization
+    
     const { userId, status } = req.query;
     const result = await service.getWorkitems({ userId, status, token }, handleError)
     handleError.setResponse(result)
