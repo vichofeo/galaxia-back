@@ -9,20 +9,22 @@ module.exports = (sequelize, DataTypes) => {
             })
             galaxia_transitions.belongsTo(models.galaxia_activities, {
                 as: 'gt_ga_fromActivity',
-                foreignKey: 'actFromId',
+                foreignKey: 'act_from_id',
                 target: 'activityId'
             })
             galaxia_transitions.belongsTo(models.galaxia_activities, {
                 as: 'gt_ga_toActivity',
-                foreignKey: 'actToId'
+                foreignKey: 'act_to_id'
             })
         }
     }
     galaxia_transitions.init(
         {
-            pId: { type: DataTypes.INTEGER, allowNull: false },
-            actFromId: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true },
-            actToId: { type: DataTypes.INTEGER, allowNull: false, primaryKey: true }
+
+
+            p_id: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+            act_from_id: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, primaryKey: true },
+            act_to_id: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, primaryKey: true }
         },
         {
             sequelize,
@@ -30,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
             timestamps: false,
             freezeTableName: true,
             tableName: 'galaxia_transitions',
+            underscored: true,
             primaryKey: false // Tabla tiene clave primaria compuesta
         }
     )

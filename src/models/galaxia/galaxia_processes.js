@@ -5,34 +5,36 @@ module.exports = (sequelize, DataTypes) => {
         static associate(models) {
             galaxia_processes.hasMany(models.galaxia_activities, {
                 as: 'gp_ga_activities',
-                foreignKey: 'pId'
+                foreignKey: 'p_id'
             })
             galaxia_processes.hasMany(models.galaxia_roles, {
                 as: 'gp_gr_roles',
-                foreignKey: 'pId'
+                foreignKey: 'p_id'
             })
             galaxia_processes.hasMany(models.galaxia_instances, {
                 as: 'gp_gi_instances',
-                foreignKey: 'pId'
+                foreignKey: 'p_id'
             })
+            galaxia_processes.hasMany(models.galaxia_transitions, { foreignKey: 'p_id', as: 'gp_gt_transitions' });
         }
     }
     galaxia_processes.init(
         {
-            pId: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-            name: { type: DataTypes.STRING(80), allowNull: false },
-            isValid: { type: DataTypes.CHAR(1), defaultValue: 'n' },
-            isActive: { type: DataTypes.CHAR(1), defaultValue: 'n' },
-            version: { type: DataTypes.STRING(12), defaultValue: '1.0' },
-            description: DataTypes.TEXT,
-            lastModif: DataTypes.INTEGER,
-            normalized_name: DataTypes.STRING(80)
+            p_id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, allowNull: false },
+            name: { type: DataTypes.STRING(80), allowNull: false, defaultValue: '' },
+            is_active: { type: DataTypes.STRING(1), allowNull: false, defaultValue: 'n' },
+            is_alid: { type: DataTypes.STRING(1), defaultValue: 'n' },
+            description: { type: DataTypes.TEXT, allowNull: true },
+            version: { type: DataTypes.STRING(12), allowNull: false, defaultValue: '' },
+            normalized_name: { type: DataTypes.STRING(80), allowNull: true },
+            last_modif: DataTypes.INTEGER,
         },
         {
             sequelize,
             modelName: 'galaxia_processes',
             timestamps: false,
             freezeTableName: true,
+            underscored: true,
             tableName: 'galaxia_processes'
         }
     )
